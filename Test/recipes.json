@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Pasta Carbonara",
+    "ingredients": ["pasta", "bacon", "eggs", "parmesan cheese", "black pepper"]
+  },
+  {
+    "name": "Chicken Stir-Fry",
+    "ingredients": ["chicken", "vegetables", "soy sauce", "garlic", "ginger"]
+  },
+  {
+    "name": "Caprese Salad",
+    "ingredients": [
+      "tomatoes",
+      "mozzarella cheese",
+      "basil leaves",
+      "balsamic vinegar",
+      "olive oil",
+      "chicken"
+    ]
+  },
+  {
+    "name": "Homemade Pizza",
+    "ingredients": [
+      "pizza dough",
+      "tomato sauce",
+      "cheese",
+      "toppings of your choice"
+    ]
+  }
+]

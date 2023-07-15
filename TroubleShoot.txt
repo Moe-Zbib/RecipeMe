@@ -1,0 +1,141 @@
+server.js:
+
+app.post("/saveFavoriteRecipes", authenticateUser, async (req, res) => {
+  try {
+    const { likedRecipes } = req.body;
+    const userId = req.userId;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update the liked recipes
+    user.favoriteRecipes = likedRecipes;
+
+    // Save the updated user data
+    await user.save();
+
+    res.status(200).json({ message: "Liked recipes saved successfully" });
+  } catch (error) {
+    console.error("Failed to save liked recipes:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/getFavoriteRecipes", authenticateUser, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const likedRecipes = user.favoriteRecipes || [];
+
+    res.status(200).json({ likedRecipes });
+  } catch (error) {
+    console.error("Failed to fetch liked recipes:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+----------------------------------------------------------------------------------------------------
+
+recipelist fav function:
+
+
+const fetchLikedRecipes = async () => {
+    try {
+      const sessionToken = await AsyncStorage.getItem("sessionToken");
+
+      const response = await axios.get(`${backendUrl}/getFavoriteRecipes`, {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+
+      if (response.status === 200) {
+        const { likedRecipes } = response.data;
+        setLikedRecipes(likedRecipes);
+      }
+    } catch (error) {
+      console.error("Failed to fetch liked recipes:", error.message);
+    }
+  };
+
+  const handleRecipeSelect = (recipe) => {
+    navigation.navigate("RecipeDetails", { recipe });
+  };
+
+  const handleFavorite = async (recipe) => {
+    try {
+      const isRecipeLiked = likedRecipes.some(
+        (likedRecipe) => likedRecipe.recipeId === recipe.uri
+      );
+      let updatedLikedRecipes = [...likedRecipes];
+
+      if (isRecipeLiked) {
+        updatedLikedRecipes = likedRecipes.filter(
+          (likedRecipe) => likedRecipe.recipeId !== recipe.uri
+        );
+      } else {
+        updatedLikedRecipes.push({
+          recipeId: recipe.uri,
+          recipeName: recipe.label,
+        });
+      }
+
+      const sessionToken = await AsyncStorage.getItem("sessionToken");
+
+      const response = await axios.post(
+        `${backendUrl}/saveFavoriteRecipes`,
+        {
+          likedRecipes: updatedLikedRecipes,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setLikedRecipes(updatedLikedRecipes);
+        console.log("Saved Recipe ID:", recipe.uri); // Log the saved recipe ID
+      }
+    } catch (error) {
+      console.error("Failed to save favorite recipe:", error.message);
+    }
+  };
+
+  const renderRecipeItem = ({ item }) => {
+    const { label, image, id, source } = item;
+    const isFavorited = likedRecipes.some(
+      (likedRecipe) => likedRecipe.recipeId === id
+    );
+
+
+-----------------------------------------------------------------------
+
+
+show the liked recipes:
+
+  useEffect(() => {
+    const fetchSavedRecipeIds = async () => {
+      try {
+        const savedRecipes = await AsyncStorage.getItem("likedRecipes");
+        if (savedRecipes) {
+          const parsedRecipes = JSON.parse(savedRecipes);
+          setSavedRecipeIds(parsedRecipes.map((recipe) => recipe.recipeId));
+        }
+      } catch (error) {
+        console.error("Failed to fetch saved recipe IDs:", error);
+      }
+    };
+
+    fetchSavedRecipeIds();
+  }, []);
