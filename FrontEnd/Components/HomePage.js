@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Text } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  Image,
+  RefreshControl,
+} from "react-native";
 import SquareCard from "./SquareCard";
+
 import RecipeDetails from "./RecipeDetails";
-import EdamamAPI from "../Api/EdamamApi";
-import Random from "./Random";
+import axios from "axios";
+
 import Categories from "./Categories";
+import Random from "./Random";
+
+const backendUrl = "http://192.168.1.6:8000";
 
 const HomePage = ({ navigation }) => {
   const [recommendedRecipes, setRecommendedRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchRecommendedRecipes();
@@ -16,8 +28,10 @@ const HomePage = ({ navigation }) => {
 
   const fetchRecommendedRecipes = async () => {
     try {
-      const recipes = await EdamamAPI.getRecommendedRecipes(8);
-      setRecommendedRecipes(recipes);
+      const response = await axios.get(`${backendUrl}/getRandomRecipes/6`);
+      if (response.status === 200) {
+        setRecommendedRecipes(response.data);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -25,6 +39,12 @@ const HomePage = ({ navigation }) => {
 
   const handleRecipeSelect = (recipe) => {
     setSelectedRecipe(recipe);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchRecommendedRecipes();
+    setRefreshing(false);
   };
 
   if (selectedRecipe) {
@@ -37,7 +57,10 @@ const HomePage = ({ navigation }) => {
   }
 
   return (
-    <ScrollView>
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }>
       <View style={styles.container}>
         <View style={{ display: "flex", flexDirection: "row" }}>
           <Categories />
@@ -64,7 +87,7 @@ const HomePage = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}>
           {recommendedRecipes.map((recipe) => (
             <SquareCard
-              key={recipe.uri} // Use a unique identifier as the key
+              key={recipe.uniqueId} // Use a unique identifier as the key
               recipe={recipe}
               onSelect={handleRecipeSelect}
             />

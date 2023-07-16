@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -14,22 +15,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    favoriteRecipes: [
-      {
-        recipeId: {
-          type: String,
-          required: true, // Mark recipeId as required
-        },
-        recipeName: {
-          type: String,
-          required: true,
-        },
-        uniqueId: {
-          type: mongoose.Schema.Types.ObjectId,
-          required: true,
-        },
-      },
-    ],
+    favoriteRecipes: {
+      type: [String],
+      default: [],
+    },
     permissions: {
       type: [String],
       default: [],

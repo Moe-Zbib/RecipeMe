@@ -95,6 +95,70 @@ app.post("/searchRecipes", async (req, res) => {
   }
 });
 
+app.post("/removeFavoriteRecipe", authenticateUser, async (req, res) => {
+  const { recipeId } = req.body;
+  const { user } = req;
+
+  try {
+    const index = user.favoriteRecipes.indexOf(recipeId);
+    if (index === -1) {
+      return res.status(400).json({ message: "Recipe is not in favorites" });
+    }
+
+    user.favoriteRecipes.splice(index, 1);
+    await user.save();
+
+    const recipe = await Recipe.findOne({ uniqueId: recipeId });
+
+    res
+      .status(200)
+      .json({ message: "Recipe removed from favorites successfully", recipe });
+  } catch (error) {
+    console.error("Failed to remove recipe from favorites:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/addFavoriteRecipe", authenticateUser, async (req, res) => {
+  const { recipeId } = req.body;
+  const { user } = req;
+
+  try {
+    const index = user.favoriteRecipes.indexOf(recipeId);
+    if (index !== -1) {
+      return res.status(400).json({ message: "Recipe already in favorites" });
+    }
+
+    user.favoriteRecipes.push(recipeId);
+    await user.save();
+
+    const recipe = await Recipe.findOne({ uniqueId: recipeId });
+
+    res
+      .status(200)
+      .json({ message: "Recipe added to favorites successfully", recipe });
+  } catch (error) {
+    console.error("Failed to add recipe to favorites:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/getFavoriteRecipes", authenticateUser, async (req, res) => {
+  const { user } = req;
+
+  try {
+    // Fetch the user's favorite recipes based on their favoriteRecipes array
+    const favoriteRecipes = await Recipe.find({
+      uniqueId: { $in: user.favoriteRecipes },
+    });
+
+    res.status(200).json({ likedRecipes: favoriteRecipes });
+  } catch (error) {
+    console.error("Failed to fetch liked recipes:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/register", async (req, res) => {
   const { email, password, username } = req.body;
 
@@ -128,6 +192,24 @@ app.post("/register", async (req, res) => {
   }
 });
 
+// ...
+
+app.get("/getRandomRecipes/:count", async (req, res) => {
+  const { count } = req.params;
+
+  try {
+    const recipes = await Recipe.aggregate([
+      { $sample: { size: parseInt(count) } },
+    ]);
+    res.status(200).json(recipes);
+  } catch (error) {
+    console.error("Failed to fetch random recipes:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ...
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -153,101 +235,13 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 app.get("/", (req, res) => {
   res.send("Welcome to the RecipeMe API");
 });
 
-app.get("/getFavoriteRecipes", authenticateUser, async (req, res) => {
-  try {
-    const user = req.user;
-    const likedRecipes = user.favoriteRecipes || [];
-    res.status(200).json({ likedRecipes });
-  } catch (error) {
-    console.error("Failed to fetch liked recipes:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.delete(
-  "/removeFavoriteRecipe/:recipeId",
-  authenticateUser,
-  async (req, res) => {
-    try {
-      const { recipeId } = req.params;
-      const user = req.user;
-      user.favoriteRecipes = user.favoriteRecipes.filter(
-        (recipe) => recipe.recipeId !== recipeId
-      );
-      await user.save();
-      res
-        .status(200)
-        .json({ message: "Recipe removed from favorites successfully" });
-    } catch (error) {
-      console.error("Failed to remove recipe from favorites:", error.message);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
-
-app.post("/addFavoriteRecipe", authenticateUser, async (req, res) => {
-  try {
-    const { recipeId } = req.body;
-    const user = req.user;
-    user.favoriteRecipes.push({ recipeId });
-    await user.save();
-    res.status(200).json({ message: "Recipe added to favorites successfully" });
-  } catch (error) {
-    console.error("Failed to add recipe to favorites:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 app.get("/", (req, res) => {
   res.send("Welcome to the RecipeMe API");
-});
-
-app.get("/getFavoriteRecipes", authenticateUser, async (req, res) => {
-  try {
-    const user = req.user;
-    const likedRecipes = user.favoriteRecipes || [];
-    res.status(200).json({ likedRecipes });
-  } catch (error) {
-    console.error("Failed to fetch liked recipes:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.delete(
-  "/removeFavoriteRecipe/:recipeId",
-  authenticateUser,
-  async (req, res) => {
-    try {
-      const { recipeId } = req.params;
-      const user = req.user;
-      user.favoriteRecipes = user.favoriteRecipes.filter(
-        (recipe) => recipe.recipeId !== recipeId
-      );
-      await user.save();
-      res
-        .status(200)
-        .json({ message: "Recipe removed from favorites successfully" });
-    } catch (error) {
-      console.error("Failed to remove recipe from favorites:", error.message);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
-
-app.post("/addFavoriteRecipe", authenticateUser, async (req, res) => {
-  try {
-    const { recipeId } = req.body;
-    const user = req.user;
-    user.favoriteRecipes.push({ recipeId });
-    await user.save();
-    res.status(200).json({ message: "Recipe added to favorites successfully" });
-  } catch (error) {
-    console.error("Failed to add recipe to favorites:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
 });
 
 // Generate a session token

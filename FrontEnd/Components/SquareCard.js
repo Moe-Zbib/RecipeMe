@@ -1,13 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { TouchableOpacity, Image, Text, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import FavButton from "../Props/FavButton";
-import { useState } from "react";
-
+import FavoriteButton from "./FavButton";
 import { useNavigation } from "@react-navigation/native";
 
-const SquareCard = ({ recipe, onFavorite }) => {
-  const { image, label } = recipe;
+const SquareCard = ({ recipe }) => {
+  const { name, image, uniqueId } = recipe;
   const [isFavorited, setIsFavorited] = useState(false);
 
   const navigation = useNavigation();
@@ -16,9 +14,8 @@ const SquareCard = ({ recipe, onFavorite }) => {
     navigation.navigate("RecipeDetails", { recipe });
   };
 
-  const handleFavorite = () => {
+  const handleToggleFavorite = () => {
     setIsFavorited(!isFavorited);
-    onFavorite(recipe);
   };
 
   return (
@@ -30,16 +27,14 @@ const SquareCard = ({ recipe, onFavorite }) => {
           start={{ x: 0, y: 1.8 }}
           end={{ x: 0, y: 0 }}
           style={styles.overlayContainer}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignContent: "flex-end",
-              justifyContent: "flex-end",
-            }}>
-            <FavButton isFavorited={isFavorited} onPress={handleFavorite} />
+          <View style={styles.favoriteButtonContainer}>
+            <FavoriteButton
+              recipeId={uniqueId}
+              isFavorited={isFavorited}
+              onToggleFavorite={handleToggleFavorite}
+            />
           </View>
-
-          <Text style={styles.overlayText}>{label}</Text>
+          <Text style={styles.overlayText}>{name}</Text>
         </LinearGradient>
       </View>
     </TouchableOpacity>
@@ -51,8 +46,8 @@ const styles = StyleSheet.create({
     width: 320,
     height: 350,
     margin: 8,
-    marginLeft: 0,
-    marginRight: 16,
+    marginLeft: 10,
+    marginRight: 5,
     borderRadius: 15,
     overflow: "hidden",
   },
@@ -72,6 +67,10 @@ const styles = StyleSheet.create({
     height: "100%",
     width: "100%",
     borderRadius: 15,
+  },
+  favoriteButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
   overlayText: {
     fontWeight: "bold",

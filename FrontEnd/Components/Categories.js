@@ -2,13 +2,13 @@ import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // Import Ionicons from react-native-vector-icons
-import EdamamAPI from "../Api/EdamamApi";
+import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
+import axios from "axios";
 
 const Categories = () => {
   const categories = [
-    { name: "Desserts", icon: "md-ice-cream" },
+    { name: "Drinks", icon: "md-ice-cream" },
     { name: "Savory", icon: "md-restaurant" },
     { name: "Morning", icon: "md-sunny" },
     { name: "Beverages", icon: "md-beer" },
@@ -21,10 +21,17 @@ const Categories = () => {
 
   const handleCategorySelect = async (category) => {
     try {
-      const data = await EdamamAPI.searchRecipes(category);
-      navigation.navigate("RecipeList", { recipes: data, query: category });
+      const response = await axios.post(
+        "http://192.168.1.6:8000/searchRecipes",
+        {
+          query: category,
+        }
+      );
+
+      const recipes = response.data;
+      navigation.navigate("RecipeList", { recipes, query: category });
     } catch (error) {
-      console.error(error);
+      console.error("Error:", error);
     }
   };
 
@@ -57,8 +64,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   categoryButton: {
-    flexDirection: "row", // Align icon and text horizontally
-    alignItems: "center", // Center align icon and text vertically
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#E9E9E9",
     paddingVertical: 25,
     paddingHorizontal: 22,

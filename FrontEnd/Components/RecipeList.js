@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   Image,
   StyleSheet,
   FlatList,
@@ -12,6 +11,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import FavoriteButton from "./FavButton";
 
 const backendUrl = "http://192.168.1.6:8000";
 
@@ -39,8 +39,7 @@ const RecipeList = ({ navigation, route }) => {
       });
 
       if (response.status === 200) {
-        const { likedRecipes } = response.data;
-        setLikedRecipes(likedRecipes);
+        setLikedRecipes(response.data.likedRecipes);
       }
     } catch (error) {
       console.error("Failed to fetch liked recipes:", error.message);
@@ -51,74 +50,20 @@ const RecipeList = ({ navigation, route }) => {
     navigation.navigate("RecipeDetails", { recipe });
   };
 
-  const handleAddToFavorites = async (recipe) => {
-    try {
-      const sessionToken = await AsyncStorage.getItem("sessionToken");
-      const isFavorited = likedRecipes.some(
-        (likedRecipe) => likedRecipe.recipeId === recipe.uri
-      );
+  // ...
 
-      let response;
-      if (isFavorited) {
-        // If the recipe is already favorited, remove it from favorites
-        response = await axios.delete(`${backendUrl}/removeFavoriteRecipe`, {
-          data: {
-            recipeId: recipe.uri,
-          },
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
-        });
-      } else {
-        // If the recipe is not favorited, add it to favorites
-        response = await axios.post(
-          `${backendUrl}/addFavoriteRecipe`,
-          {
-            recipeId: recipe.uri,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${sessionToken}`,
-            },
-          }
-        );
-      }
-
-      if (response.status === 200) {
-        if (isFavorited) {
-          console.log("Recipe removed from favorites:", recipe.label);
-          setLikedRecipes((prevLikedRecipes) =>
-            prevLikedRecipes.filter(
-              (likedRecipe) => likedRecipe.recipeId !== recipe.uri
-            )
-          );
-        } else {
-          console.log("Recipe added to favorites:", recipe.label);
-          setLikedRecipes((prevLikedRecipes) => [
-            ...prevLikedRecipes,
-            {
-              recipeId: recipe.uri,
-              recipeName: recipe.label,
-            },
-          ]);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to add/remove recipe to favorites:", error.message);
-    }
+  const isRecipeFavorited = (recipe) => {
+    return likedRecipes.some(
+      (likedRecipe) => likedRecipe.uniqueId === recipe.uniqueId
+    );
   };
 
   const renderRecipeItem = ({ item }) => {
     const { name, image, source, uniqueId } = item;
-    const isFavorited = likedRecipes.some(
-      (likedRecipe) => likedRecipe.recipeId === item.uri
-    );
+    const isFavorited = isRecipeFavorited(item);
 
     return (
-      <TouchableOpacity
-        style={styles.recipeItem}
-        key={item.recipeId}
-        onPress={() => handleRecipeSelect(item)}>
+      <View style={styles.recipeItem}>
         {image && (
           <Image
             source={{ uri: image }}
@@ -128,21 +73,11 @@ const RecipeList = ({ navigation, route }) => {
         )}
         <View style={styles.recipeDetailsContainer}>
           {name && <Text style={styles.recipeTitle}>{name}</Text>}
-          {uniqueId && (
-            <Text style={styles.recipeUniqueId}>ID: {uniqueId}</Text>
-          )}
           {source && <Text style={styles.recipeSource}>{source}</Text>}
-          <TouchableOpacity
-            onPress={() => handleAddToFavorites(item)}
-            style={styles.favoriteButton}>
-            <FontAwesome
-              name={isFavorited ? "heart" : "heart-o"}
-              size={24}
-              color={isFavorited ? "red" : "black"}
-            />
-          </TouchableOpacity>
+          {/* Render the FavoriteButton component and pass the recipeId */}
+          <FavoriteButton recipeId={uniqueId} />
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
